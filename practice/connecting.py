@@ -27,8 +27,8 @@ def fetch_comments_by_post_id(post_id):
 
 def asr_output_form(post_id):
     post, comment_texts = fetch_comments_by_post_id(post_id)
-    if not comment_texts:
-        print("No comments found for the post.")
+    if post is None or not comment_texts:
+        print(f"No comments found for the post {post_id}.")
         return None
     task_id = str(uuid.uuid4())
     task_group = group([
@@ -86,11 +86,31 @@ def update_data(post_id, post, data):
     # print(result.__dict__())
 
 
+# post_id = ObjectId('64fd60a62e7d38238abd3e5d')
+# task_id,post = asr_output_form(post_id)
+# data = get_result(task_id)
+# update_data(post_id, post, data)
 
+def fetch_all_post_ids():
+    try:
+        db = mongo_client['sims_data']
+        collection = db['scraped_data']
+        post_ids = collection.distinct('_id')
+        return post_ids
+    except Exception as e:
+        print(e)
+        return []
+def process_all_posts():
+    post_ids = fetch_all_post_ids()
+    for post_id in post_ids:
+        result = asr_output_form(post_id)
+        if result is not None:
+            task_id, post = asr_output_form(post_id)
+            data = get_result(task_id)
+            update_data(post_id, post, data)
 
-post_id = ObjectId('64fd60a62e7d38238abd3e5d')
-task_id,post = asr_output_form(post_id)
-data = get_result(task_id)
-update_data(post_id, post, data)
+def main():
+    process_all_posts()
 
-
+if __name__ == "__main__":
+    main()
